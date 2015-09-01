@@ -1,2 +1,0 @@
-# nitsnets
-Prueba backend

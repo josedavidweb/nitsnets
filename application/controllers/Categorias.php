@@ -1,4 +1,5 @@
 <?php
+
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Categorias extends MY_Controller {
@@ -24,72 +25,66 @@ class Categorias extends MY_Controller {
     }
 
     function nueva() {
-        $metodo = $_SERVER['REQUEST_METHOD'];
+        $metodo = $this->input->server('REQUEST_METHOD');
 
-		$this->load->model('idiomas_model');
-		$idiomas = $this->idiomas_model->getIdiomas();
+        $this->load->model('idiomas_model');
+        $idiomas = $this->idiomas_model->getIdiomas();
 
-		$this->data['accion'] = 'Nueva';
+        $this->data['accion'] = 'Nueva';
 
-		if ($metodo == 'POST') {
-			$nombre = trim($this->input->post('nombre-es'));
-			if ($nombre !== '') {
-				$resultado_insert = $this->categorias->insertCategoria();
-				if ($resultado_insert) {
-					$ultimoId = $this->categorias->getUltimoId()->id;
-					foreach ($idiomas as $idioma) {
-						$nombre = (trim($this->input->post('nombre-' . $idioma->codigo)));
-						$this->categorias->insertCategoriaIdioma($ultimoId, $idioma->id, $nombre);
-					}
-				}
+        if ($metodo == 'POST') {
+            $nombre = trim($this->input->post('nombre-es', TRUE));
+            if ($nombre !== '') {
+                $parametros = array('idiomas' => $idiomas, 'modelo' => $this->categorias);
+                $this->load->library('categorias_library', $parametros);
+                $resultado = $this->categorias_library->nueva($this->input->post(NULL, TRUE));
 
-				$this->session->set_flashdata('resultado', $resultado_insert);
-				redirect('categorias/listado');
-			} else {
-				$this->session->set_flashdata('campo_obligatorio', 'Nombre');
-			}
-		}
-		
-		$this->view = 'categorias/editar.php';
-		
-		$this->data['idiomas_categorias'] = $idiomas;
+                $this->session->set_flashdata('resultado', $resultado);
+                redirect('categorias/listado');
+            } else {
+                $this->session->set_flashdata('campo_obligatorio', 'Nombre');
+            }
+        }
+
+        $this->view = 'categorias/editar.php';
+
+        $this->data['idiomas_categorias'] = $idiomas;
     }
 
-	function editar($id = '') {
-        $metodo = $_SERVER['REQUEST_METHOD'];
+    function editar($id = '') {
+        $metodo = $this->input->server('REQUEST_METHOD');
 
         if (ctype_digit($id) || is_int($id)) {
             $this->load->model('idiomas_model');
             $idiomas = $this->idiomas_model->getIdiomas();
 
-			$this->data['accion'] = 'Editar';
+            $this->data['accion'] = 'Editar';
 
-			if ($metodo == 'POST') {
-				$nombre = trim($this->input->post('nombre-es'));
-				if ($nombre !== '') {
-					foreach ($idiomas as $idioma) {
-						$nombre = (trim($this->input->post('nombre-' . $idioma->codigo)));
-						$resultado_update = $this->categorias->updateCategoria($id, $nombre, $idioma->codigo);
-					}
+            if ($metodo == 'POST') {
+                $nombre = trim($this->input->post('nombre-es', TRUE));
+                if ($nombre !== '') {
+                    $parametros = array('idiomas' => $idiomas, 'modelo' => $this->categorias);
+                    $this->load->library('categorias_library', $parametros);
+                    $resultado = $this->categorias_library->editar($id, $this->input->post(NULL, TRUE));
 
-					$this->session->set_flashdata('resultado', $resultado_update);
-					redirect('categorias/listado');
-				} else {
-					$this->session->set_flashdata('campo_obligatorio', 'Nombre');
-				}
-			}
-			
-			foreach ($idiomas as $idioma) {
-				$idioma->categoria = $this->categorias->getCategoria($id, $idioma->codigo);
-			}
-			$this->data['idiomas_categorias'] = $idiomas;
+                    $this->session->set_flashdata('resultado', $resultado);
+                    redirect('categorias/listado');
+                } else {
+                    $this->session->set_flashdata('campo_obligatorio', 'Nombre');
+                }
+            }
+
+            foreach ($idiomas as $idioma) {
+                $idioma->categoria = $this->categorias->getCategoria($id, $idioma->codigo);
+            }
+            $this->data['idiomas_categorias'] = $idiomas;
         } else {
             redirect('error/ver');
         }
     }
-	
+
     function eliminar($id = 0) {
-        $metodo = $_SERVER['REQUEST_METHOD'];
+        $metodo = $this->input->server('REQUEST_METHOD');
 
         if (ctype_digit($id) && $id > 0) {
             if ($metodo == 'GET') {
@@ -101,9 +96,11 @@ class Categorias extends MY_Controller {
 
                 $this->data['num_productos'] = $num_productos;
             } elseif ($metodo == 'POST') {
-                $resultado_delete = $this->categorias->deleteCategoria($id);
+                $parametros = array('idiomas' => NULL, 'modelo' => $this->categorias);
+                $this->load->library('categorias_library', $parametros);
+                $resultado = $this->categorias_library->eliminar($id);
 
-                $this->session->set_flashdata('resultado', $resultado_delete);
+                $this->session->set_flashdata('resultado', $resultado);
                 redirect('categorias/listado');
             }
         } else {
